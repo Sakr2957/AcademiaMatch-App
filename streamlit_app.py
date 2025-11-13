@@ -106,7 +106,7 @@ with st.sidebar:
     method = st.selectbox(
         "Matching Method",
         ["embeddings", "llm"],
-        format_func=lambda x: "Sentence Transformers (AI-Powered)" if x == "embeddings" else "LLM (Under Construction)",
+        format_func=lambda x: "Sentence Transformers" if x == "embeddings" else "LLM (Under Construction)",
         help="Sentence Transformers uses semantic embeddings for intelligent matching"
     )
     
