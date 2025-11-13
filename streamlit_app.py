@@ -120,24 +120,13 @@ def get_logo_base64():
 logo_base64 = get_logo_base64()
 
 # Header with branding
-if logo_base64:
-    st.markdown(f"""
-    <div style='text-align: center; padding: 2rem 0;'>
-        <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-bottom: 1.5rem;' alt='Humber Polytechnic'>
-        <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
-        <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
-        <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
-    </div>
-    """, unsafe_allow_html=True)
-else:
-    # Fallback without logo
-    st.markdown("""
-    <div style='text-align: center; padding: 2rem 0;'>
-        <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
-        <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
-        <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
-    </div>
-    """, unsafe_allow_html=True)
+st.markdown("""
+<div style='text-align: center; padding: 2rem 0;'>
+    <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
+    <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
+    <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
@@ -152,6 +141,14 @@ st.markdown("""
 
 # Sidebar
 with st.sidebar:
+    # Add Humber logo at the top of sidebar
+    if logo_base64:
+        st.markdown(f"""
+        <div style='text-align: center; margin-bottom: 2rem;'>
+            <img src='data:image/png;base64,{logo_base64}' style='width: 100%; max-width: 200px;' alt='Humber Polytechnic'>
+        </div>
+        """, unsafe_allow_html=True)
+    
     st.header("⚙️ Configuration")
     
     method = st.selectbox(
