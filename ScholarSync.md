@@ -1,127 +1,187 @@
-# 🎓 ScholarSync
+🎓 AcademiaMatch
 
-**Academic Collaboration Platform**
+Academic Collaboration Platform
 
-*Bridging Academic Minds Through Intelligent Matching*
+Bridging Academic Minds Through Intelligent Matching
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/)
+🌟 About AcademiaMatch
 
----
+AcademiaMatch uses advanced NLP and semantic analysis to match researchers, faculty members, and academic institutions based on research interests and expertise. Find your next collaborator, co-author, or research partner with AI-powered precision.
 
-## 🌟 About ScholarSync
+✨ Features
 
-ScholarSync uses advanced NLP and semantic analysis to match researchers, faculty members, and academic institutions based on research interests and expertise. Find your next collaborator, co-author, or research partner with AI-powered precision.
+•
+AI-Powered Matching: Uses Sentence Transformers for semantic similarity
 
-## ✨ Features
+•
+Flexible Dataset Upload: Works with any CSV data (researchers, projects, students, etc.)
 
-- **AI-Powered Matching**: Uses Sentence Transformers for semantic similarity
-- **Flexible Dataset Upload**: Works with any CSV data (researchers, projects, students, etc.)
-- **Interactive Visualizations**: Beautiful similarity heatmaps with eye-friendly colors
-- **Configurable Parameters**: Adjust top N matches and similarity threshold
-- **Downloadable Results**: Export matching results as CSV
-- **Real-time Processing**: Get results in seconds
+•
+Interactive Results: Beautiful formatted tables with downloadable CSV
 
-## 🚀 Quick Start
+•
+Configurable Parameters: Adjust top N matches and similarity threshold
 
-### Run Locally
+•
+Downloadable Results: Export matching results as CSV
 
-```bash
+•
+Real-time Processing: Get results in seconds
+
+🚀 Quick Start
+
+Run Locally
+
+Bash
+
+
 pip install -r requirements.txt
-streamlit run streamlit_app.py
-```
+streamlit run AcademiaMatch_app.py
 
-### Deploy to Streamlit Cloud
 
-1. Fork this repository
-2. Go to [share.streamlit.io](https://share.streamlit.io/)
-3. Deploy from your forked repository
+Deploy to Streamlit Cloud
 
-## 📊 How It Works
+1.
+Fork this repository
 
-1. **Upload CSV Files** with your datasets (internal and external)
-2. **Configure Parameters** (matching method, top N, threshold)
-3. **Run Algorithm** to find intelligent matches
-4. **View Results** in formatted tables
-5. **Visualize** similarity matrix in interactive heatmap
-6. **Download** matching results as CSV
+2.
+Go to share.streamlit.io
 
-## 📁 CSV Format
+3.
+Deploy from your forked repository
 
-### Internal Dataset
-```csv
+📊 How It Works
+
+1.
+Upload CSV Files with your datasets (internal and external)
+
+2.
+Configure Parameters (matching method, top N, threshold)
+
+3.
+Run Algorithm to find intelligent matches
+
+4.
+View Results in formatted tables
+
+5.
+Download matching results as CSV
+
+📁 CSV Format
+
+Internal Dataset
+
+Plain Text
+
+
 internal_name,department,expertise_summary
 Dr. Sarah Thompson,Chemistry,Sustainable catalysis and green chemistry
 Dr. Michael Lee,Computer Science,Machine learning and AI ethics
-```
 
-### External Dataset
-```csv
+
+External Dataset
+
+Plain Text
+
+
 external_name,affiliation,research_interest_summary
 Dr. Emily Chen,GreenTech Institute,Hydrogen production and sustainable reactions
 Dr. Omar Yusuf,AI for Humanity Lab,Fair machine learning systems
-```
 
-## 🛠️ Technical Stack
 
-- **Frontend**: Streamlit
-- **AI Engine**: Sentence Transformers (all-MiniLM-L6-v2)
-- **Similarity Metric**: Cosine Similarity
-- **Visualizations**: Plotly
-- **Data Processing**: Pandas, NumPy, scikit-learn
+🛠️ Technical Stack
 
-## 🎯 Use Cases
+•
+Frontend: Streamlit
 
-- **Academic Collaboration**: Match researchers for joint projects
-- **Faculty Recruitment**: Match candidates to positions
-- **Student-Advisor Matching**: Pair students with suitable advisors
-- **Grant Partnerships**: Find collaborators for funding opportunities
-- **Conference Networking**: Connect attendees with similar interests
+•
+AI Engine: Sentence Transformers (all-MiniLM-L6-v2)
 
-## 🤖 AI Technology
+•
+Similarity Metric: Cosine Similarity
 
-**Yes, ScholarSync is AI-Powered!**
+•
+Data Processing: Pandas, NumPy, scikit-learn
 
-The app uses **Sentence Transformers**, a state-of-the-art deep learning model that:
-- Creates 384-dimensional semantic embeddings
-- Understands context and meaning beyond keywords
-- Captures relationships between concepts
-- Achieves 90%+ accuracy in semantic matching
+🎯 Use Cases
 
-## 📈 Results Format
+•
+Academic Collaboration: Match researchers for joint projects
+
+•
+Faculty Recruitment: Match candidates to positions
+
+•
+Student-Advisor Matching: Pair students with suitable advisors
+
+•
+Grant Partnerships: Find collaborators for funding opportunities
+
+•
+Conference Networking: Connect attendees with similar interests
+
+🤖 AI Technology
+
+AcademiaMatch is AI-Powered!
+
+The app uses Sentence Transformers, a state-of-the-art deep learning model that:
+
+•
+Creates 384-dimensional semantic embeddings
+
+•
+Understands context and meaning beyond keywords
+
+•
+Captures relationships between concepts
+
+•
+Achieves 90%+ accuracy in semantic matching
+
+📈 Results Format
 
 Output table includes:
-- `external_name` - Name from external dataset
-- `best_internal_match` - Matched name from internal dataset
-- `similarity_score` - Cosine similarity (0.000-1.000)
-- `internal_department` - Department/category of match
 
-## 🎨 Visualization
+•
+external_name - Name from external dataset
 
-The similarity heatmap uses an eye-friendly color scheme:
-- 🔴 **Dark Red (0.7-1.0)**: Excellent match
-- 🟠 **Orange (0.4-0.7)**: Good match
-- 🟡 **Yellow (0.2-0.4)**: Fair match
-- ⚪ **Light (0.0-0.2)**: Weak match
+•
+best_internal_match - Matched name from internal dataset
 
-## 🔮 Future Features
+•
+similarity_score - Cosine similarity (0.000-1.000)
 
-- **Clustering**: Group similar items before matching
-- **LLM Integration**: Advanced language model matching
-- **Batch Processing**: Handle large datasets efficiently
-- **API Access**: Programmatic matching capabilities
+•
+internal_department - Department/category of match
 
-## 📄 License
+🔮 Future Features
+
+•
+Clustering: Group similar items before matching
+
+•
+LLM Integration: Advanced language model matching
+
+•
+Batch Processing: Handle large datasets efficiently
+
+•
+API Access: Programmatic matching capabilities
+
+📄 License
 
 MIT License
 
-## 🤝 Contributing
+🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📧 Contact
+📧 Contact
 
 For questions or feedback, please open an issue on GitHub.
 
----
 
-**© 2025 ScholarSync - Academic Collaboration Platform | Powered by Advanced NLP & Sentence Transformers AI**
+
+
+© 2025 AcademiaMatch - Academic Collaboration Platform
+
