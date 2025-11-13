@@ -5,6 +5,7 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import re
 import base64
+from pathlib import Path
 
 # Page config
 st.set_page_config(
@@ -54,56 +55,82 @@ def match_datasets(internal_df, external_df, method='embeddings', top_n=3, thres
     with st.spinner('Calculating similarity scores...'):
         similarity_matrix = cosine_similarity(external_embeddings, internal_embeddings)
     
-    # Extract top matches - FIXED: Always return exactly top_n matches per external item
+    # FIXED: Extract EXACTLY top_n matches per external item
     results = []
     for ext_idx, ext_row in external_df.iterrows():
         similarities = similarity_matrix[ext_idx]
         
-        # Get top N indices (limited by available internal items)
+        # Get exactly top_n matches (or all available if less than top_n)
         actual_top_n = min(top_n, len(internal_df))
         top_indices = np.argsort(similarities)[-actual_top_n:][::-1]
         
+        # Add all top_n matches, regardless of threshold
         for rank, int_idx in enumerate(top_indices, 1):
             int_row = internal_df.iloc[int_idx]
             score = float(similarities[int_idx])
             
-            # Apply threshold filter but still try to return top_n matches
-            if score >= threshold:
-                results.append({
-                    'external_name': ext_row['external_name'],
-                    'best_internal_match': int_row['internal_name'],
-                    'similarity_score': score,
-                    'internal_department': int_row['department']
-                })
+            # Only filter by threshold if score is above it, but always include at least top_n
+            # This ensures we get exactly top_n matches per external item
+            results.append({
+                'external_name': ext_row['external_name'],
+                'best_internal_match': int_row['internal_name'],
+                'similarity_score': score,
+                'internal_department': int_row['department']
+            })
+    
+    # If threshold is set, filter AFTER getting top_n matches
+    # But keep at least 1 match per external item
+    if threshold > 0:
+        filtered_results = []
+        for ext_name in external_df['external_name'].unique():
+            ext_matches = [r for r in results if r['external_name'] == ext_name]
+            # Keep matches above threshold, or at least the best match
+            above_threshold = [r for r in ext_matches if r['similarity_score'] >= threshold]
+            if above_threshold:
+                filtered_results.extend(above_threshold)
+            elif ext_matches:  # Keep at least the best match
+                filtered_results.append(ext_matches[0])
+        results = filtered_results
     
     results_df = pd.DataFrame(results)
     avg_similarity = results_df['similarity_score'].mean() if len(results_df) > 0 else 0.0
     
     return results_df, similarity_matrix, avg_similarity
 
-# Function to encode logo image
-def get_base64_image(image_path):
-    """Convert image to base64 for embedding in HTML"""
-    try:
-        with open(image_path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    except:
-        return None
+# Function to load and encode logo
+def get_logo_base64():
+    """Try multiple paths to find and encode the logo"""
+    possible_paths = [
+        'humber_logo.png',
+        './humber_logo.png',
+        'images/humber_logo.png',
+        '/mount/src/research-alignment-matcher/humber_logo.png'
+    ]
+    
+    for path in possible_paths:
+        try:
+            if Path(path).exists():
+                with open(path, "rb") as img_file:
+                    return base64.b64encode(img_file.read()).decode()
+        except:
+            continue
+    return None
 
 # Try to load Humber logo
-logo_base64 = get_base64_image("humber_logo.png")
+logo_base64 = get_logo_base64()
 
-# Header with branding - Updated with Humber logo
+# Header with branding
 if logo_base64:
     st.markdown(f"""
     <div style='text-align: center; padding: 2rem 0;'>
-        <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-bottom: 1rem;' alt='Humber Polytechnic'>
+        <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-bottom: 1.5rem;' alt='Humber Polytechnic'>
         <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
         <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
         <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
     </div>
     """, unsafe_allow_html=True)
 else:
+    # Fallback without logo
     st.markdown("""
     <div style='text-align: center; padding: 2rem 0;'>
         <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
@@ -114,11 +141,11 @@ else:
 
 st.markdown("---")
 
-# Simplified About section
+# Simplified professional About section
 st.markdown("""
 <div style='background-color: #f0f8ff; padding: 1.5rem; border-radius: 10px; border-left: 5px solid #1f77b4; margin-bottom: 2rem;'>
     <p style='margin: 0; color: #333; font-size: 1.05rem;'>
-    <strong>ScholarSync</strong> is an AI-powered platform that matches researchers and faculty members based on their research interests and expertise using advanced semantic analysis.
+    <strong>ScholarSync</strong> matches researchers and faculty members based on their expertise and research interests using AI-powered semantic analysis.
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -153,24 +180,19 @@ with st.sidebar:
     ) / 100
     
     st.markdown("---")
+    
+    # Simplified About AI Technology section - removed clustering
     st.markdown("### 📊 About AI Technology")
     st.info(
         "✅ **Yes, this is AI-Powered!**\n\n"
-        "ScholarSync uses **Sentence Transformers**, a state-of-the-art deep learning model that:\n"
-        "- Creates 384-dimensional semantic embeddings\n"
-        "- Understands context and meaning\n"
-        "- Captures relationships between concepts\n"
-        "- Powers intelligent matching with 90%+ accuracy"
-    )
-    
-    st.markdown("---")
-    st.markdown("### 🔬 Clustering")
-    st.info(
-        "**Clustering capability** groups similar items together before matching. "
-        "This feature will be added in a future update to improve performance with large datasets."
+        "ScholarSync uses **Sentence Transformers**, a deep learning model that:\n\n"
+        "• Creates semantic embeddings\n\n"
+        "• Understands context and meaning\n\n"
+        "• Captures concept relationships\n\n"
+        "• Delivers intelligent matching"
     )
 
-# Main content - REMOVED Visualization tab
+# Main content - Only 2 tabs
 tab1, tab2 = st.tabs(["📤 Upload & Match", "📊 Results"])
 
 with tab1:
@@ -253,7 +275,7 @@ with tab1:
                     st.session_state['external_df'] = external_df
                     
                     st.success(f"✅ Matching complete! Found {len(results_df)} matches with average similarity of {avg_similarity:.1%}")
-                    st.balloons()
+                    # REMOVED: st.balloons()
                     
             except Exception as e:
                 st.error(f"❌ Error during matching: {e}")
@@ -316,7 +338,7 @@ with tab2:
     else:
         st.info("👆 Run the matching algorithm in the 'Upload & Match' tab to see results here")
 
-# Footer - REMOVED "Powered by" text
+# Footer - Simple and clean
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #666; padding: 2rem 0;'>"
