@@ -3,9 +3,8 @@ import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
 import re
+import base64
 
 # Page config
 st.set_page_config(
@@ -33,7 +32,7 @@ def preprocess_text(text):
     return ' '.join(tokens)
 
 def match_datasets(internal_df, external_df, method='embeddings', top_n=3, threshold=0.0):
-    """Match external dataset with internal dataset"""
+    """Match external dataset with internal dataset - returns EXACTLY top_n matches per external item"""
     
     # Preprocess text
     internal_df['processed_text'] = internal_df['expertise_summary'].apply(preprocess_text)
@@ -55,16 +54,20 @@ def match_datasets(internal_df, external_df, method='embeddings', top_n=3, thres
     with st.spinner('Calculating similarity scores...'):
         similarity_matrix = cosine_similarity(external_embeddings, internal_embeddings)
     
-    # Extract top matches
+    # Extract top matches - FIXED: Always return exactly top_n matches per external item
     results = []
     for ext_idx, ext_row in external_df.iterrows():
         similarities = similarity_matrix[ext_idx]
-        top_indices = np.argsort(similarities)[-top_n:][::-1]
+        
+        # Get top N indices (limited by available internal items)
+        actual_top_n = min(top_n, len(internal_df))
+        top_indices = np.argsort(similarities)[-actual_top_n:][::-1]
         
         for rank, int_idx in enumerate(top_indices, 1):
             int_row = internal_df.iloc[int_idx]
             score = float(similarities[int_idx])
             
+            # Apply threshold filter but still try to return top_n matches
             if score >= threshold:
                 results.append({
                     'external_name': ext_row['external_name'],
@@ -78,23 +81,44 @@ def match_datasets(internal_df, external_df, method='embeddings', top_n=3, thres
     
     return results_df, similarity_matrix, avg_similarity
 
-# Header with branding
-st.markdown("""
-<div style='text-align: center; padding: 2rem 0;'>
-    <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>🎓 ScholarSync</h1>
-    <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
-    <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
-</div>
-""", unsafe_allow_html=True)
+# Function to encode logo image
+def get_base64_image(image_path):
+    """Convert image to base64 for embedding in HTML"""
+    try:
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    except:
+        return None
+
+# Try to load Humber logo
+logo_base64 = get_base64_image("humber_logo.png")
+
+# Header with branding - Updated with Humber logo
+if logo_base64:
+    st.markdown(f"""
+    <div style='text-align: center; padding: 2rem 0;'>
+        <img src='data:image/png;base64,{logo_base64}' style='height: 60px; margin-bottom: 1rem;' alt='Humber Polytechnic'>
+        <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
+        <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
+        <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
+    </div>
+    """, unsafe_allow_html=True)
+else:
+    st.markdown("""
+    <div style='text-align: center; padding: 2rem 0;'>
+        <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>ScholarSync</h1>
+        <h3 style='color: #666; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
+        <p style='color: #888; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown("---")
 
+# Simplified About section
 st.markdown("""
 <div style='background-color: #f0f8ff; padding: 1.5rem; border-radius: 10px; border-left: 5px solid #1f77b4; margin-bottom: 2rem;'>
     <p style='margin: 0; color: #333; font-size: 1.05rem;'>
-    <strong>ScholarSync</strong> uses advanced NLP and semantic analysis to match researchers, faculty members, 
-    and academic institutions based on research interests and expertise. Find your next collaborator, 
-    co-author, or research partner with AI-powered precision.
+    <strong>ScholarSync</strong> is an AI-powered platform that matches researchers and faculty members based on their research interests and expertise using advanced semantic analysis.
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -106,7 +130,7 @@ with st.sidebar:
     method = st.selectbox(
         "Matching Method",
         ["embeddings", "llm"],
-        format_func=lambda x: "Sentence Transformers" if x == "embeddings" else "LLM (Under Construction)",
+        format_func=lambda x: "Sentence Transformers (AI-Powered)" if x == "embeddings" else "LLM (Under Construction)",
         help="Sentence Transformers uses semantic embeddings for intelligent matching"
     )
     
@@ -146,8 +170,8 @@ with st.sidebar:
         "This feature will be added in a future update to improve performance with large datasets."
     )
 
-# Main content
-tab1, tab2, tab3 = st.tabs(["📤 Upload & Match", "📊 Results", "📈 Visualization"])
+# Main content - REMOVED Visualization tab
+tab1, tab2 = st.tabs(["📤 Upload & Match", "📊 Results"])
 
 with tab1:
     st.header("Upload CSV Files")
@@ -292,85 +316,11 @@ with tab2:
     else:
         st.info("👆 Run the matching algorithm in the 'Upload & Match' tab to see results here")
 
-with tab3:
-    st.header("Similarity Heatmap")
-    
-    if 'similarity_matrix' in st.session_state:
-        similarity_matrix = st.session_state['similarity_matrix']
-        internal_df = st.session_state['internal_df']
-        external_df = st.session_state['external_df']
-        
-        # Create heatmap with Matplotlib (more stable than Plotly)
-        # Extract last names and clean special characters for display
-        def clean_name(name):
-            """Extract last name and remove special characters"""
-            name_str = str(name)
-            # Get last name if full name
-            if ' ' in name_str:
-                name_str = name_str.split()[-1]
-            # Replace problematic characters
-            name_str = name_str.replace("'", "").replace('"', '').replace('`', '')
-            return name_str
-        
-        x_labels = [clean_name(name) for name in internal_df['internal_name']]
-        y_labels = [clean_name(name) for name in external_df['external_name']]
-        
-        # Create custom colormap matching the reference image
-        colors = ['#FFF5E1', '#FFE4B5', '#FFD700', '#FF8C00', '#DC143C', '#8B0000']
-        n_bins = 100
-        cmap = mcolors.LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
-        
-        # Create figure
-        fig, ax = plt.subplots(figsize=(12, 8))
-        
-        # Create heatmap
-        im = ax.imshow(similarity_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=1)
-        
-        # Set ticks and labels
-        ax.set_xticks(np.arange(len(x_labels)))
-        ax.set_yticks(np.arange(len(y_labels)))
-        ax.set_xticklabels(x_labels, rotation=45, ha='right')
-        ax.set_yticklabels(y_labels)
-        
-        # Add colorbar
-        cbar = plt.colorbar(im, ax=ax)
-        cbar.set_label('Cosine Similarity', rotation=270, labelpad=20)
-        
-        # Add text annotations
-        for i in range(len(y_labels)):
-            for j in range(len(x_labels)):
-                text = ax.text(j, i, f'{similarity_matrix[i, j]:.3f}',
-                             ha="center", va="center", color="black", fontsize=10)
-        
-        # Set labels and title
-        ax.set_xlabel('Internal Dataset', fontsize=12, fontweight='bold')
-        ax.set_ylabel('External Dataset', fontsize=12, fontweight='bold')
-        ax.set_title('Similarity Matrix Heatmap', fontsize=16, fontweight='bold', pad=20)
-        
-        # Adjust layout
-        plt.tight_layout()
-        
-        # Display in Streamlit
-        st.pyplot(fig)
-        
-        # Add explanation
-        st.markdown("""
-        **How to read this heatmap:**
-        - 🔴 **Dark Red (0.7-1.0)**: Excellent match - strong alignment
-        - 🟠 **Orange (0.4-0.7)**: Good match - moderate alignment
-        - 🟡 **Yellow (0.2-0.4)**: Fair match - some alignment
-        - ⚪ **Light (0.0-0.2)**: Weak match - minimal alignment
-        """)
-        
-    else:
-        st.info("👆 Run the matching algorithm in the 'Upload & Match' tab to see visualizations here")
-
-# Footer
+# Footer - REMOVED "Powered by" text
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: #666; padding: 2rem 0;'>"
-    "© 2025 ScholarSync - Academic Collaboration Platform | "
-    "Powered by Advanced NLP & Sentence Transformers AI"
+    "© 2025 ScholarSync - Academic Collaboration Platform"
     "</div>",
     unsafe_allow_html=True
 )
