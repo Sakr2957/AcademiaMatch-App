@@ -98,6 +98,9 @@ st.markdown("""
         background-color: #f0f2f6;
         color: #1a1a1a;
         border-radius: 4px 4px 0 0;
+        padding: 12px 30px !important;
+        min-width: 180px;
+        font-size: 1rem;
     }
     
     .stTabs [aria-selected="true"] {
@@ -224,14 +227,12 @@ logo_base64 = get_logo_base64()
 
 # Header with branding
 st.markdown("""
-<div style='text-align: center; padding: 2rem 0;'>
+<div style='text-align: center; padding: 1.5rem 0 0.5rem 0;'>
     <h1 style='color: #1f77b4; font-size: 3rem; margin-bottom: 0.5rem;'>AcademiaMatch</h1>
     <h3 style='color: #000000; font-weight: 400; margin-bottom: 0.5rem;'>Academic Collaboration Platform</h3>
     <p style='color: #000000; font-size: 1.1rem; font-style: italic;'>Bridging Academic Minds Through Intelligent Matching</p>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown("---")
 
 # Sidebar
 with st.sidebar:
