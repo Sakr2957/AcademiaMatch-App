@@ -14,31 +14,114 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS to change sidebar background to off-white
+# Custom CSS for professional Humber-branded color scheme
 st.markdown("""
 <style>
-    /* Change sidebar background to off-white */
-    [data-testid="stSidebar"] {
-        background-color: #f5f5f0;
+    /* Main app background - light and professional */
+    .stApp {
+        background-color: #ffffff;
     }
     
-    /* Adjust sidebar text color for better contrast on off-white background */
-    [data-testid="stSidebar"] * {
-        color: #262730 !important;
+    /* Sidebar background controlled by theme config */
+    
+    /* Sidebar text - dark for readability */
+    [data-testid="stSidebar"] .stMarkdown,
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] p,
+    [data-testid="stSidebar"] span,
+    [data-testid="stSidebar"] div {
+        color: #1a1a1a !important;
     }
     
-    /* Keep input fields and dropdowns readable */
+    /* Sidebar headers */
+    [data-testid="stSidebar"] h1,
+    [data-testid="stSidebar"] h2,
+    [data-testid="stSidebar"] h3 {
+        color: #003C71 !important;
+    }
+    
+    /* Input fields and dropdowns in sidebar */
     [data-testid="stSidebar"] input,
     [data-testid="stSidebar"] select,
-    [data-testid="stSidebar"] textarea {
+    [data-testid="stSidebar"] textarea,
+    [data-testid="stSidebar"] [data-baseweb="select"] {
         background-color: white !important;
-        color: #262730 !important;
+        color: #1a1a1a !important;
+        border: 1px solid #cccccc !important;
     }
     
-    /* Style the info boxes in sidebar */
+    /* Number input buttons */
+    [data-testid="stSidebar"] button[kind="secondary"] {
+        background-color: white !important;
+        color: #1a1a1a !important;
+        border: 1px solid #cccccc !important;
+    }
+    
+    /* Info boxes in sidebar - Humber blue theme */
     [data-testid="stSidebar"] .stAlert {
-        background-color: #e8f4f8 !important;
-        color: #262730 !important;
+        background-color: #e8f1f8 !important;
+        color: #1a1a1a !important;
+        border-left: 4px solid #003C71 !important;
+    }
+    
+    /* Success messages - Humber gold theme */
+    .stSuccess {
+        background-color: #fff8e1 !important;
+        color: #1a1a1a !important;
+        border-left: 4px solid #F7B500 !important;
+    }
+    
+    /* Slider in sidebar */
+    [data-testid="stSidebar"] .stSlider {
+        color: #1a1a1a !important;
+    }
+    
+    /* Main content area styling */
+    .main .block-container {
+        background-color: #ffffff;
+        padding-top: 2rem;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: #f0f2f6;
+        color: #1a1a1a;
+        border-radius: 4px 4px 0 0;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background-color: #003C71 !important;
+        color: white !important;
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        background-color: #003C71;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .stButton > button:hover {
+        background-color: #002952;
+    }
+    
+    /* Download button */
+    .stDownloadButton > button {
+        background-color: #F7B500;
+        color: #1a1a1a;
+        border: none;
+        border-radius: 4px;
+        font-weight: 500;
+    }
+    
+    .stDownloadButton > button:hover {
+        background-color: #d99f00;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -84,7 +167,7 @@ def match_datasets(internal_df, external_df, method='embeddings', top_n=3, thres
     with st.spinner('Calculating similarity scores...'):
         similarity_matrix = cosine_similarity(external_embeddings, internal_embeddings)
     
-    # FIXED: Extract EXACTLY top_n matches per external item
+    # Extract EXACTLY top_n matches per external item (PROPERLY FIXED)
     results = []
     for ext_idx, ext_row in external_df.iterrows():
         similarities = similarity_matrix[ext_idx]
@@ -93,33 +176,24 @@ def match_datasets(internal_df, external_df, method='embeddings', top_n=3, thres
         actual_top_n = min(top_n, len(internal_df))
         top_indices = np.argsort(similarities)[-actual_top_n:][::-1]
         
-        # Add all top_n matches, regardless of threshold
-        for rank, int_idx in enumerate(top_indices, 1):
+        # Add ONLY top_n matches per external item
+        matches_added = 0
+        for int_idx in top_indices:
+            if matches_added >= top_n:
+                break
+                
             int_row = internal_df.iloc[int_idx]
             score = float(similarities[int_idx])
             
-            # Only filter by threshold if score is above it, but always include at least top_n
-            # This ensures we get exactly top_n matches per external item
-            results.append({
-                'external_name': ext_row['external_name'],
-                'best_internal_match': int_row['internal_name'],
-                'similarity_score': score,
-                'internal_department': int_row['department']
-            })
-    
-    # If threshold is set, filter AFTER getting top_n matches
-    # But keep at least 1 match per external item
-    if threshold > 0:
-        filtered_results = []
-        for ext_name in external_df['external_name'].unique():
-            ext_matches = [r for r in results if r['external_name'] == ext_name]
-            # Keep matches above threshold, or at least the best match
-            above_threshold = [r for r in ext_matches if r['similarity_score'] >= threshold]
-            if above_threshold:
-                filtered_results.extend(above_threshold)
-            elif ext_matches:  # Keep at least the best match
-                filtered_results.append(ext_matches[0])
-        results = filtered_results
+            # Apply threshold filter
+            if score >= threshold:
+                results.append({
+                    'external_name': ext_row['external_name'],
+                    'best_internal_match': int_row['internal_name'],
+                    'similarity_score': score,
+                    'internal_department': int_row['department']
+                })
+                matches_added += 1
     
     results_df = pd.DataFrame(results)
     avg_similarity = results_df['similarity_score'].mean() if len(results_df) > 0 else 0.0
@@ -207,15 +281,15 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Simplified About AI Technology section - removed clustering
-    st.markdown("### 📊 About AI Technology")
+    # About ScholarSync section
+    st.markdown("### 📘 About ScholarSync")
     st.info(
-        "✅ **Yes, this is AI-Powered!**\n\n"
-        "ScholarSync uses **Sentence Transformers**, a deep learning model that:\n\n"
-        "• Creates semantic embeddings\n\n"
-        "• Understands context and meaning\n\n"
-        "• Captures concept relationships\n\n"
-        "• Delivers intelligent matching"
+        "**ScholarSync** is an AI-powered platform that connects researchers and faculty members based on semantic similarity of their research interests and expertise.\n\n"
+        "Using advanced natural language processing, ScholarSync:\n\n"
+        "• Analyzes research profiles semantically\n\n"
+        "• Identifies potential collaborators\n\n"
+        "• Facilitates academic partnerships\n\n"
+        "• Supports interdisciplinary research"
     )
 
 # Main content - Only 2 tabs
