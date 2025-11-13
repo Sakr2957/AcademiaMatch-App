@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
-import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import re
 
 # Page config
@@ -299,58 +300,58 @@ with tab3:
         internal_df = st.session_state['internal_df']
         external_df = st.session_state['external_df']
         
-        # Create heatmap with improved color scheme (matching the reference image)
-        fig_heatmap = go.Figure(data=go.Heatmap(
-            z=similarity_matrix,
-            x=[name.split()[-1] if isinstance(name, str) else str(name) for name in internal_df['internal_name']],
-            y=[name.split()[-1] if isinstance(name, str) else str(name) for name in external_df['external_name']],
-            colorscale=[
-                [0.0, '#FFF5E1'],   # Very light cream for low values
-                [0.2, '#FFE4B5'],   # Light peach
-                [0.4, '#FFD700'],   # Gold
-                [0.6, '#FF8C00'],   # Dark orange
-                [0.8, '#DC143C'],   # Crimson
-                [1.0, '#8B0000']    # Dark red for high values
-            ],
-            text=np.round(similarity_matrix, 3),
-            texttemplate='%{text}',
-            textfont={"size": 12, "color": "black"},
-            colorbar=dict(
-                title="Cosine Similarity",
-                titleside="right",
-                tickmode="linear",
-                tick0=0,
-                dtick=0.1,
-                thickness=15,
-                len=0.7
-            ),
-            hovertemplate='External: %{y}<br>Internal: %{x}<br>Similarity: %{z:.3f}<extra></extra>'
-        ))
+        # Create heatmap with Matplotlib (more stable than Plotly)
+        # Extract last names and clean special characters for display
+        def clean_name(name):
+            """Extract last name and remove special characters"""
+            name_str = str(name)
+            # Get last name if full name
+            if ' ' in name_str:
+                name_str = name_str.split()[-1]
+            # Replace problematic characters
+            name_str = name_str.replace("'", "").replace('"', '').replace('`', '')
+            return name_str
         
-        fig_heatmap.update_layout(
-            title={
-                'text': "Similarity Matrix Heatmap",
-                'x': 0.5,
-                'xanchor': 'center',
-                'font': {'size': 20, 'color': '#333'}
-            },
-            xaxis_title="Internal Researchers",
-            yaxis_title="External Researchers",
-            height=600,
-            font=dict(size=12),
-            plot_bgcolor='white',
-            paper_bgcolor='white',
-            xaxis=dict(
-                tickangle=-45,
-                side='bottom',
-                showgrid=False
-            ),
-            yaxis=dict(
-                showgrid=False
-            )
-        )
+        x_labels = [clean_name(name) for name in internal_df['internal_name']]
+        y_labels = [clean_name(name) for name in external_df['external_name']]
         
-        st.plotly_chart(fig_heatmap, use_container_width=True)
+        # Create custom colormap matching the reference image
+        colors = ['#FFF5E1', '#FFE4B5', '#FFD700', '#FF8C00', '#DC143C', '#8B0000']
+        n_bins = 100
+        cmap = mcolors.LinearSegmentedColormap.from_list('custom', colors, N=n_bins)
+        
+        # Create figure
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # Create heatmap
+        im = ax.imshow(similarity_matrix, cmap=cmap, aspect='auto', vmin=0, vmax=1)
+        
+        # Set ticks and labels
+        ax.set_xticks(np.arange(len(x_labels)))
+        ax.set_yticks(np.arange(len(y_labels)))
+        ax.set_xticklabels(x_labels, rotation=45, ha='right')
+        ax.set_yticklabels(y_labels)
+        
+        # Add colorbar
+        cbar = plt.colorbar(im, ax=ax)
+        cbar.set_label('Cosine Similarity', rotation=270, labelpad=20)
+        
+        # Add text annotations
+        for i in range(len(y_labels)):
+            for j in range(len(x_labels)):
+                text = ax.text(j, i, f'{similarity_matrix[i, j]:.3f}',
+                             ha="center", va="center", color="black", fontsize=10)
+        
+        # Set labels and title
+        ax.set_xlabel('Internal Dataset', fontsize=12, fontweight='bold')
+        ax.set_ylabel('External Dataset', fontsize=12, fontweight='bold')
+        ax.set_title('Similarity Matrix Heatmap', fontsize=16, fontweight='bold', pad=20)
+        
+        # Adjust layout
+        plt.tight_layout()
+        
+        # Display in Streamlit
+        st.pyplot(fig)
         
         # Add explanation
         st.markdown("""
@@ -372,3 +373,4 @@ st.markdown(
     "Powered by Advanced NLP & Sentence Transformers AI"
     "</div>",
     unsafe_allow_html=True
+)
