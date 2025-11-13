@@ -372,4 +372,3 @@ st.markdown(
     "Powered by Advanced NLP & Sentence Transformers AI"
     "</div>",
     unsafe_allow_html=True
-)
